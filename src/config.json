@@ -51,5 +51,7 @@
     "max_tt_025C_1v80",
     "max_ss_100C_1v60",
     "max_ff_n40C_1v95"
-  ]
+  ],
+  "RUN_POST_GRT_DESIGN_REPAIR": true,
+  "RUN_POST_GRT_RESIZER_TIMING": true
 }

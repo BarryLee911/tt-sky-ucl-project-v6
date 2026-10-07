@@ -8,7 +8,16 @@ lock=json.loads((ROOT/'build_lock.json').read_text(encoding='utf-8'))
 cfg=json.loads((ROOT/'src/config.json').read_text(encoding='utf-8'))
 experiment=json.loads((ROOT/'experiment.json').read_text(encoding='utf-8'))
 errors=[]
-if cfg!=dict(experiment['baseline_config'],SYNTH_STRATEGY=experiment['synthesis_strategy']): errors.append('Non-strategy configuration drift')
+repair_flags={'RUN_POST_GRT_DESIGN_REPAIR':True,'RUN_POST_GRT_RESIZER_TIMING':True}
+if experiment['id']!='area0-postgrt' or experiment['synthesis_strategy']!='AREA 0' or experiment['baseline_commit']!='8f0bfe91f4938f0ac623964e1f3d52a2062040a3': errors.append('Experiment identity differs')
+if experiment['config_overrides']!=repair_flags: errors.append('Repair profile differs')
+if cfg!=dict(experiment['baseline_config'],**repair_flags): errors.append('Non-repair configuration drift')
+postgrt_steps={}
+for step in ('repairdesignpostgrt','resizertimingpostgrt'):
+    states=list(RUN.glob('*-openroad-'+step+'/state_out.json'))
+    completed=len(states)==1 and states[0].is_file() and states[0].stat().st_size>0
+    postgrt_steps[step]={'completed':bool(completed),'state_files':[str(p.relative_to(RUN)) for p in states]}
+    if not completed: errors.append('Post-GRT step missing or incomplete: '+step)
 for path,digest in experiment['immutable_files_sha256'].items():
     if hashlib.sha256((ROOT/path).read_bytes()).hexdigest()!=digest: errors.append('Immutable file changed: '+path)
 metrics={}
@@ -88,7 +97,7 @@ if synth:
     if synthesis_state.is_file():
         synthesis_metrics=json.loads(synthesis_state.read_text()).get('metrics',{})
 result={'experiment':experiment['id'],'synthesis_strategy':cfg['SYNTH_STRATEGY'],
-        'baseline_commit':experiment['baseline_commit'],'resolved_aliases':resolved_aliases,'synthesis_metrics':synthesis_metrics,
+        'baseline_commit':experiment['baseline_commit'],'config_overrides':repair_flags,'postgrt_steps':postgrt_steps,'resolved_aliases':resolved_aliases,'synthesis_metrics':synthesis_metrics,
         'immutable_files_sha256':experiment['immutable_files_sha256'],'status':'PASS' if passed else 'FAIL','source_sha256':source_hash,'clock_period_ns':cfg['CLOCK_PERIOD'],
         'provenance_errors':errors,'submission_ready':ready,'complete_layout':bool(complete),
         'timing_pass':timing_pass,'electrical_pass':electrical_pass,'physical_pass':physical_pass,
@@ -96,7 +105,7 @@ result={'experiment':experiment['id'],'synthesis_strategy':cfg['SYNTH_STRATEGY']
         'stdcell_count':metrics.get('design__instance__count__stdcell'),'metrics':metrics,'resolved':resolved,
         'pdk_source':pdk_source,'pdk_version':pdk_version,'support_tools_commit':tools_sha}
 (OUT/'assessment.json').write_text(json.dumps(result,indent=2))
-lines=['# SKY26d 80 MHz '+cfg['SYNTH_STRATEGY']+' experiment assessment','','Status: '+result['status'],
+lines=['# SKY26d 80 MHz '+cfg['SYNTH_STRATEGY']+' post-GRT repair experiment assessment','','Status: '+result['status'],
        'A completed layout may be packaged for testing even when strict timing/electrical checks fail.','',
        '| Corner | Setup ns | Hold ns | Slew | Cap | Fanout |','| --- | ---: | ---: | ---: | ---: | ---: |']
 for c in corners:lines.append('| '+ ' | '.join(str(c[k]) for k in ['corner','setup_ns','hold_ns','slew','capacitance','fanout'])+' |')

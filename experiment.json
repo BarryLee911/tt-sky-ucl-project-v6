@@ -1,6 +1,6 @@
 {
-  "id": "area0",
-  "baseline_commit": "45e7d83f2bea6b98df407d108c6f1fffc6f5cbe6",
+  "id": "area0-postgrt",
+  "baseline_commit": "8f0bfe91f4938f0ac623964e1f3d52a2062040a3",
   "synthesis_strategy": "AREA 0",
   "baseline_config": {
     "PL_TARGET_DENSITY_PCT": 60,
@@ -66,5 +66,11 @@
     "test/tb.gtkw": "aad62770ad1b98dc6151569c325fdb6101e5fd74e3412e2a0ccb7fbab08c4ba6",
     "test/tb.v": "27d932ab18078c06377e6d29c3814d8ce63362f69f89195e97ed878b3ee3c1e6",
     "test/test.py": "1dccb97eb3474bd26d2314976b0c28ccaf4ae1ad351855cf0ee83d881dae6c0c"
+  },
+  "baseline_build_commit": "3882a2a4cda83ed034e30af1dfc7536e3742d42a",
+  "baseline_gds_run_id": 37691499016,
+  "config_overrides": {
+    "RUN_POST_GRT_DESIGN_REPAIR": true,
+    "RUN_POST_GRT_RESIZER_TIMING": true
   }
 }

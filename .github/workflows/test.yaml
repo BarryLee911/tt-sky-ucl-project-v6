@@ -1,7 +1,7 @@
 name: test
 on:
   push:
-    branches: [experiment/80mhz-area0, experiment/80mhz-delay0]
+    branches: [experiment/80mhz-area0-postgrt]
     paths: ['src/**', 'test/**', 'scripts/**', 'info.yaml', 'experiment.json', 'build_lock.json', '.github/workflows/**']
   workflow_dispatch:
 permissions:
