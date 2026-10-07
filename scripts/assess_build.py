@@ -22,7 +22,9 @@ resolved_path=RUN/'resolved.json'
 resolved=json.loads(resolved_path.read_text()) if resolved_path.exists() else {}
 source_hash=hashlib.sha256((ROOT/'src/project.v').read_bytes()).hexdigest()
 if source_hash!=lock['source_sha256']: errors.append('v6 source changed')
-expected=dict(cfg)
+# LibreLane serializes deprecated parameter names under their canonical names.
+resolved_aliases={'FP_IO_HLENGTH': 'IO_PIN_H_LENGTH', 'FP_IO_VLENGTH': 'IO_PIN_V_LENGTH', 'FP_PDN_VPITCH': 'PDN_VPITCH', 'FP_PDN_MULTILAYER': 'PDN_MULTILAYER'}
+expected={resolved_aliases.get(k,k):v for k,v in cfg.items()}
 expected['PDK']='sky130A'
 for k,v in expected.items():
     if resolved.get(k)!=v: errors.append('Resolved '+k+' differs')
@@ -86,7 +88,7 @@ if synth:
     if synthesis_state.is_file():
         synthesis_metrics=json.loads(synthesis_state.read_text()).get('metrics',{})
 result={'experiment':experiment['id'],'synthesis_strategy':cfg['SYNTH_STRATEGY'],
-        'baseline_commit':experiment['baseline_commit'],'synthesis_metrics':synthesis_metrics,
+        'baseline_commit':experiment['baseline_commit'],'resolved_aliases':resolved_aliases,'synthesis_metrics':synthesis_metrics,
         'immutable_files_sha256':experiment['immutable_files_sha256'],'status':'PASS' if passed else 'FAIL','source_sha256':source_hash,'clock_period_ns':cfg['CLOCK_PERIOD'],
         'provenance_errors':errors,'submission_ready':ready,'complete_layout':bool(complete),
         'timing_pass':timing_pass,'electrical_pass':electrical_pass,'physical_pass':physical_pass,
