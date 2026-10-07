@@ -6,7 +6,11 @@ OUT=ROOT/'verification/build'
 OUT.mkdir(parents=True,exist_ok=True)
 lock=json.loads((ROOT/'build_lock.json').read_text(encoding='utf-8'))
 cfg=json.loads((ROOT/'src/config.json').read_text(encoding='utf-8'))
+experiment=json.loads((ROOT/'experiment.json').read_text(encoding='utf-8'))
 errors=[]
+if cfg!=dict(experiment['baseline_config'],SYNTH_STRATEGY=experiment['synthesis_strategy']): errors.append('Non-strategy configuration drift')
+for path,digest in experiment['immutable_files_sha256'].items():
+    if hashlib.sha256((ROOT/path).read_bytes()).hexdigest()!=digest: errors.append('Immutable file changed: '+path)
 metrics={}
 metrics_path=RUN/'final/metrics.csv'
 if metrics_path.exists():
@@ -18,7 +22,7 @@ resolved_path=RUN/'resolved.json'
 resolved=json.loads(resolved_path.read_text()) if resolved_path.exists() else {}
 source_hash=hashlib.sha256((ROOT/'src/project.v').read_bytes()).hexdigest()
 if source_hash!=lock['source_sha256']: errors.append('v6 source changed')
-expected={k:cfg[k] for k in ['CLOCK_PERIOD','IO_DELAY_CONSTRAINT','STD_CELL_LIBRARY','SYNTH_STRATEGY','FP_CORE_UTIL','PL_TARGET_DENSITY_PCT','MAX_TRANSITION_CONSTRAINT','MAX_CAPACITANCE_CONSTRAINT','MAX_FANOUT_CONSTRAINT','PL_RESIZER_HOLD_SLACK_MARGIN','GRT_RESIZER_HOLD_SLACK_MARGIN','TIMING_VIOLATION_CORNERS','HOLD_VIOLATION_CORNERS','MAX_SLEW_VIOLATION_CORNERS','MAX_CAP_VIOLATION_CORNERS','STA_CORNERS']}
+expected=dict(cfg)
 expected['PDK']='sky130A'
 for k,v in expected.items():
     if resolved.get(k)!=v: errors.append('Resolved '+k+' differs')
@@ -76,14 +80,21 @@ if worst:
             first='Startpoint:'+data.split('Startpoint:',1)[1].split('Startpoint:',1)[0]
             (OUT/'worst_path.txt').write_text(first)
 passed=bool(ready and timing_pass and electrical_pass and physical_pass)
-result={'status':'PASS' if passed else 'FAIL','source_sha256':source_hash,'clock_period_ns':cfg['CLOCK_PERIOD'],
+synthesis_metrics={}
+if synth:
+    synthesis_state=synth[0].parents[1]/'state_out.json'
+    if synthesis_state.is_file():
+        synthesis_metrics=json.loads(synthesis_state.read_text()).get('metrics',{})
+result={'experiment':experiment['id'],'synthesis_strategy':cfg['SYNTH_STRATEGY'],
+        'baseline_commit':experiment['baseline_commit'],'synthesis_metrics':synthesis_metrics,
+        'immutable_files_sha256':experiment['immutable_files_sha256'],'status':'PASS' if passed else 'FAIL','source_sha256':source_hash,'clock_period_ns':cfg['CLOCK_PERIOD'],
         'provenance_errors':errors,'submission_ready':ready,'complete_layout':bool(complete),
         'timing_pass':timing_pass,'electrical_pass':electrical_pass,'physical_pass':physical_pass,
         'corners':corners,'physical':physical,'stdcell_area_um2':metrics.get('design__instance__area__stdcell'),
         'stdcell_count':metrics.get('design__instance__count__stdcell'),'metrics':metrics,'resolved':resolved,
         'pdk_source':pdk_source,'pdk_version':pdk_version,'support_tools_commit':tools_sha}
 (OUT/'assessment.json').write_text(json.dumps(result,indent=2))
-lines=['# SKY26d experiment assessment','','Status: '+result['status'],
+lines=['# SKY26d 80 MHz '+cfg['SYNTH_STRATEGY']+' experiment assessment','','Status: '+result['status'],
        'A completed layout may be packaged for testing even when strict timing/electrical checks fail.','',
        '| Corner | Setup ns | Hold ns | Slew | Cap | Fanout |','| --- | ---: | ---: | ---: | ---: | ---: |']
 for c in corners:lines.append('| '+ ' | '.join(str(c[k]) for k in ['corner','setup_ns','hold_ns','slew','capacitance','fanout'])+' |')
