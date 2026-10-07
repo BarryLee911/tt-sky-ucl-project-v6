@@ -1,0 +1,92 @@
+name: 80MHz area0 existing GDS postchecks
+on:
+  push:
+    branches: [experiment/80mhz-postcheck]
+    paths: ['scripts/recover_existing.py', '.github/workflows/postcheck-area0.yaml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6
+        with:
+          ref: 3882a2a4cda83ed034e30af1dfc7536e3742d42a
+          path: design
+      - uses: actions/download-artifact@v7
+        with:
+          name: GDS_logs
+          run-id: 37691499016
+          github-token: ${{ github.token }}
+          path: design
+      - uses: actions/download-artifact@v7
+        with:
+          name: SKY26d-assessment
+          run-id: 37691499016
+          github-token: ${{ github.token }}
+          path: design
+      - uses: actions/checkout@v6
+        with:
+          repository: TinyTapeout/tt-support-tools
+          ref: 01d5d2814fa9dd61e9d211e0b235a4a592a9316a
+          path: design/tt
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Audit preserved configuration and recover packaging metadata
+        working-directory: design
+        env:
+          SOURCE_COMMIT: 3882a2a4cda83ed034e30af1dfc7536e3742d42a
+          SOURCE_RUN_ID: '37691499016'
+        run: python ../scripts/recover_existing.py
+      - name: Install packaging dependencies
+        run: pip install -r design/tt/requirements.txt
+      - name: Package original completed layout
+        working-directory: design
+        run: ./tt/tt_tool.py --create-tt-submission
+      - uses: actions/upload-artifact@v7
+        with:
+          name: tt_submission
+          path: |
+            design/src/*
+            design/docs/*
+            design/tt_submission/*
+            design/info.yaml
+            design/LICENSE
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: postcheck-assessment
+          path: design/verification/recovery/
+  gl_test:
+    needs: package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: 3882a2a4cda83ed034e30af1dfc7536e3742d42a
+      - uses: TinyTapeout/tt-gds-action/gl_test@395eedb3eeec3c2f4961c3b04ff2cf87f5525636
+  precheck:
+    needs: package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: TinyTapeout/tt-gds-action/precheck@395eedb3eeec3c2f4961c3b04ff2cf87f5525636
+        with:
+          tools-ref: 01d5d2814fa9dd61e9d211e0b235a4a592a9316a
+  strict_result:
+    needs: [package, gl_test, precheck]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: postcheck-assessment
+      - name: Preserve original strict failure
+        run: |
+          python -c "import json; d=json.load(open('assessment.json')); print('Original strict status:',d['status']); assert d['status']=='PASS'"
