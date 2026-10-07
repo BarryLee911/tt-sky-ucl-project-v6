@@ -4,7 +4,7 @@ project:
   discord: ""
   description: "2048-sample sign overlap and approximate 1024-sample peak detector"
   language: "Verilog"
-  clock_hz: 40000000
+  clock_hz: 80000000
   tiles: "4x2"
   top_module: "tt_um_barrylee911_sine_area_v6"
   source_files:
