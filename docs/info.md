@@ -1,20 +1,16 @@
-<!---
+# How it works
 
-This file is used to generate your project datasheet. Please fill in the information below and delete any unused
-sections.
+Counts sign agreement with a 2048-sample internal square reference and tracks an approximate peak over 1024 samples. Area and peak alternate on the result pins.
 
-You can also include images in this folder and reference them in the markdown. Each image must be less than
-512 kb in size, and the combined size of all images must be less than 1 MB.
--->
+# How to test
 
-## How it works
+Drive unsigned ADC data on ui[7:0]. Hold a valid level 0-23 on uio[4:0] after reset.
+The first valid level is latched. Sampling starts one full divider interval later.
+Release external drive on uio[0] before 80000 clocks; the chip then drives the result type there.
+Result bits are uo[7:0] and uio[7:5]. Type 0 is area, type 1 is peak.
+Use the matching branch frequency: 40 MHz on main, 80 MHz on experiment/80mhz.
+The 80 MHz target exceeds the SKY130 input-pad rating.
 
-Explain how your project works
+# External hardware
 
-## How to test
-
-Explain how to use your project
-
-## External hardware
-
-List external hardware used in your project (e.g. PMOD, LED display, etc), if any
+FPGA clock and synchronized excitation, external ADC, and the impedance measurement front end.

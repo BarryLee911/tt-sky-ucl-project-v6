@@ -1,48 +1,40 @@
 name: test
-on: [push, workflow_dispatch]
+on:
+  push:
+    branches: [main, experiment/80mhz]
+    paths: ['src/**', 'test/**', 'scripts/**', 'info.yaml', 'build_lock.json', '.github/workflows/**']
+  workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   test:
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v6
-        with:
-          submodules: recursive
-
-      - name: Install iverilog
-        shell: bash
-        run: sudo apt-get update && sudo apt-get install -y iverilog
-
-      # Set Python up and install cocotb
-      - name: Setup python
-        uses: actions/setup-python@v6
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
-
-      - name: Install Python packages
-        shell: bash
-        run: pip install -r test/requirements.txt
-
-      - name: Run tests
+      - name: Install simulator and dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iverilog
+          pip install -r test/requirements.txt
+      - name: Verify immutable source and frequency
+        run: python scripts/verify_inputs.py
+      - name: Pin-level RTL regression
         run: |
           cd test
-          make clean
           make
-          # make will return success even if the tests fail, so check results.xml for failed tests
           python -m cocotb_tools.check_results results.xml
-
-      - name: Test Summary
-        uses: test-summary/action@v2.4
-        with:
-          paths: "test/results.xml"
+      - name: Preserve RTL results
         if: always()
-
-      - name: upload waveform and test results
-        if: success() || failure()
         uses: actions/upload-artifact@v7
         with:
           name: test-results
           path: |
-            test/tb.fst
+            verification/inputs.json
             test/results.xml
+            test/tb.fst
             test/output/*
+

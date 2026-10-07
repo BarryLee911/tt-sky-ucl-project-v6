@@ -1,42 +1,21 @@
-![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/test/badge.svg) ![](../../workflows/fpga/badge.svg)
+# v6 SKY26d experiment
 
-# Tiny Tapeout Verilog Project Template
+Unchanged v6 sign-overlap and approximate peak detector, built for TTSKY26d.
 
-- [Read the documentation for project](docs/info.md)
+| Branch | Clock | Period | Highest input frequency | Output handoff |
+| --- | ---: | ---: | ---: | ---: |
+| main | 40 MHz | 25 ns | 19.53125 kHz | 2 ms |
+| experiment/80mhz | 80 MHz | 12.5 ns | 39.0625 kHz | 1 ms |
 
-## What is Tiny Tapeout?
+Both builds start at 4x2 tiles. If placement capacity requires expansion, both use the same 6x2 or 8x2 size.
 
-Tiny Tapeout is an educational project that aims to make it easier and cheaper than ever to get your digital and analog designs manufactured on a real chip.
+Levels 0-23 are retained. Input frequency is clock_hz / (2048 * 2^level).
+40 MHz levels 0-22 match the original 80 MHz levels 1-23; level 23 extends lower.
+80 MHz exceeds the official SKY130 input-pad rating and is an experimental target.
 
-To learn more and get started, visit https://tinytapeout.com.
+RTL remains byte-identical to v6 commit dae8933. A transparent wrapper supplies a unique top-module name.
+All nine setup/hold corners and electrical rules must pass for strict acceptance.
+Completed layouts are preserved for physical and functional checks even when strict acceptance fails.
 
-## Set up your Verilog project
-
-1. Add your Verilog files to the `src` folder.
-2. Edit the [info.yaml](info.yaml) and update information about your project, paying special attention to the `source_files` and `top_module` properties. If you are upgrading an existing Tiny Tapeout project, check out our [online info.yaml migration tool](https://tinytapeout.github.io/tt-yaml-upgrade-tool/).
-3. Edit [docs/info.md](docs/info.md) and add a description of your project.
-4. Adapt the testbench to your design. See [test/README.md](test/README.md) for more information.
-
-The GitHub action will automatically build the ASIC files using [LibreLane](https://www.zerotoasiccourse.com/terminology/librelane/).
-
-## Enable GitHub actions to build the results page
-
-- [Enabling GitHub Pages](https://tinytapeout.com/faq/#my-github-action-is-failing-on-the-pages-part)
-
-## Resources
-
-- [FAQ](https://tinytapeout.com/faq/)
-- [Digital design lessons](https://tinytapeout.com/digital_design/)
-- [Learn how semiconductors work](https://tinytapeout.com/siliwiz/)
-- [Join the community](https://tinytapeout.com/discord)
-- [Build your design locally](https://www.tinytapeout.com/guides/local-hardening/)
-
-## What next?
-
-- [Submit your design to the next shuttle](https://app.tinytapeout.com/).
-- Edit [this README](README.md) and explain your design, how it works, and how to test it.
-- Share your project on your social network of choice:
-  - LinkedIn [#tinytapeout](https://www.linkedin.com/search/results/content/?keywords=%23tinytapeout) [@TinyTapeout](https://www.linkedin.com/company/100708654/)
-  - Mastodon [#tinytapeout](https://chaos.social/tags/tinytapeout) [@matthewvenn](https://chaos.social/@matthewvenn)
-  - X (formerly Twitter) [#tinytapeout](https://twitter.com/hashtag/tinytapeout) [@tinytapeout](https://twitter.com/tinytapeout)
-  - Bluesky [@tinytapeout.com](https://bsky.app/profile/tinytapeout.com)
+Run RTL checks with `cd test && make`. GitHub Actions builds GDS, performs precheck and gate-level checks.
+No FPGA, ADC, board or silicon validation is implied. This repository has not been registered or paid for a shuttle.

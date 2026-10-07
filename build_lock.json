@@ -1,0 +1,21 @@
+{
+  "baseline_commit": "dae89331466486dab23fe0605b45c979ee50ef03",
+  "source_sha256": "e070e8658952ff7314bfd6ce7e69e035233953ccced5e57fa44714ae7d9f2fe2",
+  "top_module": "tt_um_barrylee911_sine_area_v6",
+  "template_commit": "68c3fd3f3ec640e5edcb6a5f74f360ebc016bb2a",
+  "action_commit": "395eedb3eeec3c2f4961c3b04ff2cf87f5525636",
+  "support_tools_commit": "01d5d2814fa9dd61e9d211e0b235a4a592a9316a",
+  "pdk_version": "8afc8346a57fe1ab7934ba5a6056ea8b43078e71",
+  "librelane_version": "3.0.14",
+  "sta_corners": [
+    "nom_tt_025C_1v80",
+    "nom_ss_100C_1v60",
+    "nom_ff_n40C_1v95",
+    "min_tt_025C_1v80",
+    "min_ss_100C_1v60",
+    "min_ff_n40C_1v95",
+    "max_tt_025C_1v80",
+    "max_ss_100C_1v60",
+    "max_ff_n40C_1v95"
+  ]
+}
