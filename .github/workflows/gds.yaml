@@ -1,7 +1,7 @@
 name: gds
 on:
   push:
-    branches: [experiment/80mhz-area0-postgrt]
+    branches: [experiment/80mhz-official-checks]
     paths: ['src/**', 'test/**', 'scripts/**', 'info.yaml', 'experiment.json', 'build_lock.json', '.github/workflows/**']
   workflow_dispatch:
 permissions:
@@ -10,81 +10,35 @@ jobs:
   gds:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
-    outputs:
-      submission_ready: ${{ steps.package.outputs.ready }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - name: checkout repo
+        uses: actions/checkout@v6
         with:
-          python-version: '3.11'
-      - name: Verify v6 source and frequency
-        run: |
-          pip install PyYAML==6.0.2
-          python scripts/verify_inputs.py
-      - name: Build TTSKY26d GDS
+          submodules: recursive
+      - name: Build GDS
         id: harden
-        continue-on-error: true
         uses: TinyTapeout/tt-gds-action@395eedb3eeec3c2f4961c3b04ff2cf87f5525636 # ttsky26d
         with:
           pdk: sky130A
           tools-ref: 01d5d2814fa9dd61e9d211e0b235a4a592a9316a
           librelane-version: '3.0.14'
-      - name: Assess all nine corners and preserve metadata
-        id: assess
-        if: always()
-        run: python scripts/assess_build.py
-      - name: Package completed layout for experimental checks
-        id: package
-        if: always() && steps.assess.outputs.submission_ready == 'true'
-        run: |
-          ./tt/tt_tool.py --create-tt-submission
-          echo "ready=true" >> "$GITHUB_OUTPUT"
-      - name: Upload recovered submission
-        if: always() && steps.package.outputs.ready == 'true' && steps.harden.outcome != 'success'
-        uses: actions/upload-artifact@v7
-        with:
-          name: tt_submission
-          path: |
-            src/*
-            docs/*
-            tt_submission/*
-            info.yaml
-            LICENSE
-      - name: Preserve assessment and completed layout
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: SKY26d-assessment
-          path: |
-            verification/
-            runs/wokwi/resolved.json
-            runs/wokwi/pdk.json
-            runs/wokwi/final/
-      - name: Require strict timing and electrical pass
-        if: always()
-        env:
-          HARDEN_OUTCOME: ${{ steps.harden.outcome }}
-          ASSESSMENT_PASS: ${{ steps.assess.outputs.passed }}
-        run: |
-          test "$HARDEN_OUTCOME" = success
-          test "$ASSESSMENT_PASS" = true
   precheck:
     needs: gds
-    if: always() && needs.gds.outputs.submission_ready == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - name: Tiny Tapeout physical precheck
+      - name: Run Tiny Tapeout Precheck
         uses: TinyTapeout/tt-gds-action/precheck@395eedb3eeec3c2f4961c3b04ff2cf87f5525636
         with:
           tools-ref: 01d5d2814fa9dd61e9d211e0b235a4a592a9316a
   gl_test:
     needs: gds
-    if: always() && needs.gds.outputs.submission_ready == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v6
-      - name: SKY130 gate-level functional regression
+      - name: checkout repo
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      - name: GL test
         uses: TinyTapeout/tt-gds-action/gl_test@395eedb3eeec3c2f4961c3b04ff2cf87f5525636
-

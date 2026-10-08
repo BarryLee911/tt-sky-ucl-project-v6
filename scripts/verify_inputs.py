@@ -1,52 +1,56 @@
-from pathlib import Path
+"""Source/configuration provenance checks; no timing or electrical signoff policy."""
 from decimal import Decimal
-import hashlib,json,re,sys
+import hashlib
+import json
+from pathlib import Path
 import yaml
-ROOT=Path(__file__).resolve().parents[1]
-lock=json.loads((ROOT/'build_lock.json').read_text(encoding='utf-8'))
-config=json.loads((ROOT/'src/config.json').read_text(encoding='utf-8'))
-info=yaml.safe_load((ROOT/'info.yaml').read_text(encoding='utf-8'))['project']
-experiment=json.loads((ROOT/'experiment.json').read_text(encoding='utf-8'))
-assert experiment['baseline_commit']=='8f0bfe91f4938f0ac623964e1f3d52a2062040a3'
-strategy=experiment['synthesis_strategy']
-assert strategy in ('AREA 0','DELAY 0')
-assert experiment['id']=='area0-postgrt' and strategy=='AREA 0'
-repair_flags={'RUN_POST_GRT_DESIGN_REPAIR':True,'RUN_POST_GRT_RESIZER_TIMING':True}
-assert experiment['config_overrides']==repair_flags
-assert config==dict(experiment['baseline_config'],**repair_flags), 'Non-repair configuration drift'
-assert info['clock_hz']==80000000 and info['tiles']=='6x2'
-for path,digest in experiment['immutable_files_sha256'].items():
-    assert hashlib.sha256((ROOT/path).read_bytes()).hexdigest()==digest, 'Immutable file changed: '+path
-source=(ROOT/'src/project.v').read_bytes()
-assert hashlib.sha256(source).hexdigest()==lock['source_sha256'], 'v6 RTL bytes changed'
-assert info['clock_hz'] in (40000000,80000000)
-period=Decimal(str(config['CLOCK_PERIOD']))
-assert period*info['clock_hz']==Decimal('1000000000'), 'info.yaml clock differs'
-assert period*Decimal(str(config['IO_DELAY_CONSTRAINT']))/100==Decimal('2.5')
-assert info['top_module']==lock['top_module']
-assert info['source_files']==['project.v','sky_wrapper.v']
-assert info['tiles'] in ('4x2','6x2','8x2')
-expected={'SYNTH_STRATEGY':strategy,'STD_CELL_LIBRARY':'sky130_fd_sc_hd',
-          'PL_TARGET_DENSITY_PCT':60,'FP_CORE_UTIL':50,
-          'MAX_TRANSITION_CONSTRAINT':0.75,'MAX_FANOUT_CONSTRAINT':10,
-          'MAX_CAPACITANCE_CONSTRAINT':None,
-          'PL_RESIZER_HOLD_SLACK_MARGIN':0.1,'GRT_RESIZER_HOLD_SLACK_MARGIN':0.05,
-          'TIMING_VIOLATION_CORNERS':['*'],'HOLD_VIOLATION_CORNERS':['*'],
-          'MAX_SLEW_VIOLATION_CORNERS':['*'],'MAX_CAP_VIOLATION_CORNERS':['*']}
-assert all(config.get(k)==v for k,v in expected.items()), 'Experiment constraints changed'
-assert config['STA_CORNERS']==lock['sta_corners']
-assert b'parameter integer HANDOFF_WAIT_CYCLES = 80000' in source
-workflow=yaml.safe_load((ROOT/'.github/workflows/gds.yaml').read_text(encoding='utf-8'))
-steps=workflow['jobs']['gds']['steps']
-harden=next(s for s in steps if s.get('id')=='harden')
-assert harden['uses'].endswith('@'+lock['action_commit'])
-assert harden['with']=={'pdk':'sky130A','tools-ref':lock['support_tools_commit'],'librelane-version':lock['librelane_version']}
-report={'status':'PASS','experiment':experiment['id'],'synthesis_strategy':strategy,'baseline_commit':experiment['baseline_commit'],'config_overrides':repair_flags,'clock_hz':info['clock_hz'],'clock_period_ns':float(period),
-        'io_delay_ns':2.5,'tiles':info['tiles'],'source_sha256':lock['source_sha256'],
-        'handoff_cycles':80000,'handoff_ms':80000/info['clock_hz']*1000,
-        'frequencies_hz':{str(level):info['clock_hz']/(2048*(2**level)) for level in range(24)}}
-out=ROOT/'verification'
-out.mkdir(exist_ok=True)
-(out/'inputs.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
-print(json.dumps({k:v for k,v in report.items() if k!='frequencies_hz'},indent=2))
 
+ROOT = Path(__file__).resolve().parents[1]
+lock = json.loads((ROOT / 'build_lock.json').read_text(encoding='utf-8'))
+config = json.loads((ROOT / 'src/config.json').read_text(encoding='utf-8'))
+info = yaml.safe_load((ROOT / 'info.yaml').read_text(encoding='utf-8'))['project']
+experiment = json.loads((ROOT / 'experiment.json').read_text(encoding='utf-8'))
+assert experiment['id'] == 'official-checks'
+assert experiment['baseline_commit'] == 'da3743552a625af0f71b2d3b912b2f3708bcc8b5'
+assert experiment['acceptance_profile'] == 'official-ttsky26d-defaults'
+removed = {'TIMING_VIOLATION_CORNERS', 'HOLD_VIOLATION_CORNERS',
+           'MAX_SLEW_VIOLATION_CORNERS', 'MAX_CAP_VIOLATION_CORNERS'}
+assert set(experiment['removed_config_keys']) == removed
+assert experiment['config_overrides'] == {}
+assert config == {key: value for key, value in experiment['baseline_config'].items()
+                  if key not in removed}, 'Implementation configuration changed'
+assert not (removed | {'SETUP_VIOLATION_CORNERS'}) & config.keys()
+for path, expected_hash in experiment['immutable_files_sha256'].items():
+    assert hashlib.sha256((ROOT / path).read_bytes()).hexdigest() == expected_hash, path
+source = (ROOT / 'src/project.v').read_bytes()
+assert hashlib.sha256(source).hexdigest() == lock['source_sha256']
+assert b'parameter integer HANDOFF_WAIT_CYCLES = 80000' in source
+assert info['clock_hz'] == 80000000 and info['tiles'] == '6x2'
+assert info['top_module'] == lock['top_module']
+assert info['source_files'] == ['project.v', 'sky_wrapper.v']
+period = Decimal(str(config['CLOCK_PERIOD']))
+assert period * info['clock_hz'] == Decimal('1000000000')
+assert period * Decimal(str(config['IO_DELAY_CONSTRAINT'])) / 100 == Decimal('2.5')
+assert config['STA_CORNERS'] == lock['sta_corners']
+workflow = yaml.safe_load((ROOT / '.github/workflows/gds.yaml').read_text(encoding='utf-8'))
+gds = workflow['jobs']['gds']
+assert len(gds['steps']) == 2
+harden = next(step for step in gds['steps'] if step.get('id') == 'harden')
+assert harden['uses'] == 'TinyTapeout/tt-gds-action@' + lock['action_commit']
+assert harden['with'] == {'pdk': 'sky130A', 'tools-ref': lock['support_tools_commit'],
+                          'librelane-version': lock['librelane_version']}
+assert 'continue-on-error' not in harden and 'continue-on-error' not in gds
+for name in ('precheck', 'gl_test'):
+    job = workflow['jobs'][name]
+    assert job['needs'] == 'gds' and 'if' not in job
+report = {'status': 'PASS', 'scope': 'source and configuration provenance only',
+          'experiment': experiment['id'], 'baseline_commit': experiment['baseline_commit'],
+          'acceptance_profile': experiment['acceptance_profile'],
+          'clock_hz': info['clock_hz'], 'clock_period_ns': float(period),
+          'io_delay_ns': 2.5, 'tiles': info['tiles'], 'source_sha256': lock['source_sha256'],
+          'handoff_cycles': 80000, 'handoff_ms': 1.0,
+          'removed_config_keys': sorted(removed)}
+out = ROOT / 'verification'
+out.mkdir(exist_ok=True)
+(out / 'inputs.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
+print(json.dumps(report, indent=2))

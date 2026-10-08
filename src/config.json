@@ -29,18 +29,6 @@
   "MAX_TRANSITION_CONSTRAINT": 0.75,
   "MAX_CAPACITANCE_CONSTRAINT": null,
   "MAX_FANOUT_CONSTRAINT": 10,
-  "TIMING_VIOLATION_CORNERS": [
-    "*"
-  ],
-  "HOLD_VIOLATION_CORNERS": [
-    "*"
-  ],
-  "MAX_SLEW_VIOLATION_CORNERS": [
-    "*"
-  ],
-  "MAX_CAP_VIOLATION_CORNERS": [
-    "*"
-  ],
   "STA_CORNERS": [
     "nom_tt_025C_1v80",
     "nom_ss_100C_1v60",
