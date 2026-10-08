@@ -1,12 +1,14 @@
 {
-  "id": "official-checks-4x2",
-  "baseline_commit": "679dbd88bb4a0062b3611c912f4d5e878e2e3574",
-  "baseline_gds_run_id": 37843865974,
+  "id": "official-checks-4x2-density70",
+  "baseline_commit": "4fc28307d41d38ff5437dbef0d0d5de16b1b4fd6",
+  "baseline_gds_run_id": 37853828968,
+  "passing_6x2_baseline_commit": "679dbd88bb4a0062b3611c912f4d5e878e2e3574",
+  "passing_6x2_gds_run_id": 37843865974,
   "synthesis_strategy": "AREA 0",
   "acceptance_profile": "official-ttsky26d-defaults",
-  "baseline_tiles": "6x2",
+  "baseline_tiles": "4x2",
   "tiles": "4x2",
-  "baseline_info_yaml_sha256": "5c56b893a138a47110ee4baee43b158e1a06b9a1cbf9badb8bf34d5fe324ea38",
+  "baseline_info_yaml_sha256": "f254b11242c1339d2c889a270b465c61122ab5ce21c3e921ff39cbe965bce3d0",
   "baseline_config": {
     "PL_TARGET_DENSITY_PCT": 60,
     "CLOCK_PERIOD": 12.5,
@@ -53,7 +55,9 @@
     "RUN_POST_GRT_RESIZER_TIMING": true
   },
   "removed_config_keys": [],
-  "config_overrides": {},
+  "config_overrides": {
+    "PL_TARGET_DENSITY_PCT": 70
+  },
   "immutable_files_sha256": {
     "src/project.v": "e070e8658952ff7314bfd6ce7e69e035233953ccced5e57fa44714ae7d9f2fe2",
     "src/sky_wrapper.v": "a055a2587504f9a95d2d9dcc6975e1c7b52c37ce6ed9929239d35ae491dd39d1",
@@ -80,11 +84,13 @@
       ""
     ]
   },
-  "prior_4x2_run": {
-    "run_id": 37651255886,
-    "commit": "d336c8ce66735a9ee025fd6669b201a4d9020bf1",
-    "failure": "DPL-0036: 27 instances failed detailed placement during antenna repair",
-    "difference_from_this_trial": "Earlier attempt did not enable both post-GRT repair switches. Its physical failure occurred before final acceptance checkers."
+  "baseline_failure": {
+    "step": "43-openroad-repairantennas / OpenROAD.DiodeInsertion",
+    "error": "DPL-0036: Detailed placement failed",
+    "last_completed_core_utilization": 0.810059,
+    "failed_instance_log_entries": 20,
+    "unique_failed_instances": 18,
+    "note": "Global placement with target density 60% completed. Failure was later during antenna repair, before final signoff."
   },
-  "scope": "Change tile allocation from 6x2 to 4x2 only. Preserve functional RTL, tests, 80 MHz constraints, 60% target density, AREA 0, post-GRT repair, locked build versions, and official acceptance policy."
+  "scope": "Change only PL_TARGET_DENSITY_PCT from 60 to 70 relative to the 4x2 baseline. Preserve RTL, wrapper, tests, info.yaml, 80 MHz constraints, hold margins, AREA 0, post-GRT repair switches, locked build versions, and official acceptance rules."
 }

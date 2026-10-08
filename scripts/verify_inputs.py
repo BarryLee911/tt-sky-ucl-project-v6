@@ -10,20 +10,20 @@ lock = json.loads((ROOT / 'build_lock.json').read_text(encoding='utf-8'))
 config = json.loads((ROOT / 'src/config.json').read_text(encoding='utf-8'))
 info = yaml.safe_load((ROOT / 'info.yaml').read_text(encoding='utf-8'))['project']
 experiment = json.loads((ROOT / 'experiment.json').read_text(encoding='utf-8'))
-assert experiment['id'] == 'official-checks-4x2'
-assert experiment['baseline_commit'] == '679dbd88bb4a0062b3611c912f4d5e878e2e3574'
+assert experiment['id'] == 'official-checks-4x2-density70'
+assert experiment['baseline_commit'] == '4fc28307d41d38ff5437dbef0d0d5de16b1b4fd6'
 assert experiment['acceptance_profile'] == 'official-ttsky26d-defaults'
 assert experiment['removed_config_keys'] == []
-assert experiment['config_overrides'] == {}
-assert config == experiment['baseline_config'], 'Implementation configuration changed'
+assert experiment['baseline_config']['PL_TARGET_DENSITY_PCT'] == 60
+assert experiment['config_overrides'] == {'PL_TARGET_DENSITY_PCT': 70}
+assert config == dict(experiment['baseline_config'], **experiment['config_overrides']), 'Non-density configuration changed'
 assert not {'TIMING_VIOLATION_CORNERS', 'HOLD_VIOLATION_CORNERS',
             'MAX_SLEW_VIOLATION_CORNERS', 'MAX_CAP_VIOLATION_CORNERS',
             'SETUP_VIOLATION_CORNERS'} & config.keys()
-assert experiment['baseline_tiles'] == '6x2' and experiment['tiles'] == '4x2'
+assert experiment['baseline_tiles'] == '4x2' and experiment['tiles'] == '4x2'
 info_text = (ROOT / 'info.yaml').read_text(encoding='utf-8')
 assert info_text.count('tiles: "4x2"') == 1
-baseline_info = info_text.replace('tiles: "4x2"', 'tiles: "6x2"')
-assert hashlib.sha256(baseline_info.encode()).hexdigest() == experiment['baseline_info_yaml_sha256']
+assert hashlib.sha256((ROOT / 'info.yaml').read_bytes()).hexdigest() == experiment['baseline_info_yaml_sha256']
 assert hashlib.sha256((ROOT / 'build_lock.json').read_bytes()).hexdigest() == experiment['build_lock_sha256']
 for path, expected_hash in experiment['immutable_files_sha256'].items():
     assert hashlib.sha256((ROOT / path).read_bytes()).hexdigest() == expected_hash, path
@@ -54,7 +54,8 @@ report = {'status': 'PASS', 'scope': 'source and configuration provenance only',
           'clock_hz': info['clock_hz'], 'clock_period_ns': float(period),
           'io_delay_ns': 2.5, 'tiles': info['tiles'], 'source_sha256': lock['source_sha256'],
           'handoff_cycles': 80000, 'handoff_ms': 1.0,
-          'tile_change': {'from': experiment['baseline_tiles'], 'to': info['tiles']}}
+          'density_change': {'from': experiment['baseline_config']['PL_TARGET_DENSITY_PCT'],
+                             'to': config['PL_TARGET_DENSITY_PCT']}}
 out = ROOT / 'verification'
 out.mkdir(exist_ok=True)
 (out / 'inputs.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
