@@ -1,9 +1,12 @@
 {
-  "id": "official-checks",
-  "baseline_commit": "da3743552a625af0f71b2d3b912b2f3708bcc8b5",
-  "baseline_gds_run_id": 37697885043,
+  "id": "official-checks-4x2",
+  "baseline_commit": "679dbd88bb4a0062b3611c912f4d5e878e2e3574",
+  "baseline_gds_run_id": 37843865974,
   "synthesis_strategy": "AREA 0",
   "acceptance_profile": "official-ttsky26d-defaults",
+  "baseline_tiles": "6x2",
+  "tiles": "4x2",
+  "baseline_info_yaml_sha256": "5c56b893a138a47110ee4baee43b158e1a06b9a1cbf9badb8bf34d5fe324ea38",
   "baseline_config": {
     "PL_TARGET_DENSITY_PCT": 60,
     "CLOCK_PERIOD": 12.5,
@@ -35,18 +38,6 @@
     "MAX_TRANSITION_CONSTRAINT": 0.75,
     "MAX_CAPACITANCE_CONSTRAINT": null,
     "MAX_FANOUT_CONSTRAINT": 10,
-    "TIMING_VIOLATION_CORNERS": [
-      "*"
-    ],
-    "HOLD_VIOLATION_CORNERS": [
-      "*"
-    ],
-    "MAX_SLEW_VIOLATION_CORNERS": [
-      "*"
-    ],
-    "MAX_CAP_VIOLATION_CORNERS": [
-      "*"
-    ],
     "STA_CORNERS": [
       "nom_tt_025C_1v80",
       "nom_ss_100C_1v60",
@@ -61,12 +52,7 @@
     "RUN_POST_GRT_DESIGN_REPAIR": true,
     "RUN_POST_GRT_RESIZER_TIMING": true
   },
-  "removed_config_keys": [
-    "TIMING_VIOLATION_CORNERS",
-    "HOLD_VIOLATION_CORNERS",
-    "MAX_SLEW_VIOLATION_CORNERS",
-    "MAX_CAP_VIOLATION_CORNERS"
-  ],
+  "removed_config_keys": [],
   "config_overrides": {},
   "immutable_files_sha256": {
     "src/project.v": "e070e8658952ff7314bfd6ce7e69e035233953ccced5e57fa44714ae7d9f2fe2",
@@ -78,6 +64,7 @@
     "test/tb.v": "27d932ab18078c06377e6d29c3814d8ce63362f69f89195e97ed878b3ee3c1e6",
     "test/test.py": "1dccb97eb3474bd26d2314976b0c28ccaf4ae1ad351855cf0ee83d881dae6c0c"
   },
+  "build_lock_sha256": "3e07703da025e64380d00e10a1e50099c1582dd31a65bcc916310d081c7ef8b5",
   "expected_resolved_checker_defaults": {
     "TIMING_VIOLATION_CORNERS": [
       "*tt*"
@@ -93,5 +80,11 @@
       ""
     ]
   },
-  "scope": "Change acceptance policy and workflow only. Preserve the 80 MHz post-GRT implementation configuration, including the existing library-based capacitance setting. This is not a reset of every design parameter to template defaults."
+  "prior_4x2_run": {
+    "run_id": 37651255886,
+    "commit": "d336c8ce66735a9ee025fd6669b201a4d9020bf1",
+    "failure": "DPL-0036: 27 instances failed detailed placement during antenna repair",
+    "difference_from_this_trial": "Earlier attempt did not enable both post-GRT repair switches. Its physical failure occurred before final acceptance checkers."
+  },
+  "scope": "Change tile allocation from 6x2 to 4x2 only. Preserve functional RTL, tests, 80 MHz constraints, 60% target density, AREA 0, post-GRT repair, locked build versions, and official acceptance policy."
 }

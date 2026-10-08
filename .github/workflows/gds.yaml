@@ -1,7 +1,7 @@
 name: gds
 on:
   push:
-    branches: [experiment/80mhz-official-checks]
+    branches: [experiment/80mhz-official-4x2]
     paths: ['src/**', 'test/**', 'scripts/**', 'info.yaml', 'experiment.json', 'build_lock.json', '.github/workflows/**']
   workflow_dispatch:
 permissions:
