@@ -10,12 +10,12 @@ lock = json.loads((ROOT / 'build_lock.json').read_text(encoding='utf-8'))
 config = json.loads((ROOT / 'src/config.json').read_text(encoding='utf-8'))
 info = yaml.safe_load((ROOT / 'info.yaml').read_text(encoding='utf-8'))['project']
 experiment = json.loads((ROOT / 'experiment.json').read_text(encoding='utf-8'))
-assert experiment['id'] == 'official-checks-4x2-density70'
-assert experiment['baseline_commit'] == '4fc28307d41d38ff5437dbef0d0d5de16b1b4fd6'
+assert experiment['id'] == 'official-checks-4x2-density80'
+assert experiment['baseline_commit'] == 'e69a4847c0a5b4b7d2f06c63eae7e1f66977c02e'
 assert experiment['acceptance_profile'] == 'official-ttsky26d-defaults'
 assert experiment['removed_config_keys'] == []
-assert experiment['baseline_config']['PL_TARGET_DENSITY_PCT'] == 60
-assert experiment['config_overrides'] == {'PL_TARGET_DENSITY_PCT': 70}
+assert experiment['baseline_config']['PL_TARGET_DENSITY_PCT'] == 70
+assert experiment['config_overrides'] == {'PL_TARGET_DENSITY_PCT': 80}
 assert config == dict(experiment['baseline_config'], **experiment['config_overrides']), 'Non-density configuration changed'
 assert not {'TIMING_VIOLATION_CORNERS', 'HOLD_VIOLATION_CORNERS',
             'MAX_SLEW_VIOLATION_CORNERS', 'MAX_CAP_VIOLATION_CORNERS',
